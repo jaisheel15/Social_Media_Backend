@@ -1,0 +1,129 @@
+package com.example.post_service.service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
+import com.example.post_service.dto.CreateCommentRequest;
+import com.example.post_service.dto.CreatePostRequest;
+import com.example.post_service.dto.FeedResponse;
+import com.example.post_service.model.Comments;
+import com.example.post_service.model.Likes;
+import com.example.post_service.model.Post;
+import com.example.post_service.repository.CommentRepository;
+import com.example.post_service.repository.LikesRepository;
+import com.example.post_service.repository.PostRepository;
+
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class PostService {
+    private final PostRepository postRepository;
+    private final LikesRepository likesRepository;
+    private final CommentRepository commentRepository;
+
+    public Post getPostById(String id) {
+        return postRepository.findById(id).orElse(null);
+    }
+
+    public Post createPost(CreatePostRequest request){
+        Post post = Post.builder()
+        .title(request.getTitle())
+        .media(request.getMedia())
+        .content(request.getContent())
+        .authorId(request.getAuthorId())
+        .commentsIds(new ArrayList<>())
+        .likesIds(new ArrayList<>())
+        .build();
+
+        return postRepository.save(post);
+    }
+
+    public void deletePost(String id) {
+        postRepository.deleteById(id);
+    }
+
+public Likes likePost(String userId, String postId) {
+    Post post = postRepository.findById(postId).orElse(null);
+    if (post == null) {
+        return null; 
+    }
+
+
+    if (post.getLikesIds() == null) {
+        post.setLikesIds(new ArrayList<>());
+    }
+
+    Optional<Likes> existing = likesRepository.findByUserIdAndPostId(userId, postId);
+    if (existing.isPresent()) {
+        return existing.get();  
+    }
+
+    Likes saved = likesRepository.save(Likes.builder()
+        .postId(postId)
+        .userId(userId)
+        .build());
+
+    post.getLikesIds().add(saved.getId());
+    post.setLikeCount(post.getLikeCount() + 1);
+    postRepository.save(post);
+    return saved;
+}
+
+    public void  commentPost( String postId, CreateCommentRequest request) {
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post == null) {
+            return; 
+        }
+
+        if(post.getCommentsIds() ==null){
+            post.setCommentsIds(new ArrayList<>());
+        }
+
+
+       Comments comment = commentRepository.save(Comments.builder()
+        .postId(postId)
+        .userId(request.getUserId())
+        .content(request.getContent())
+        .build());
+
+        post.getCommentsIds().add(comment.getId());
+        postRepository.save(post);
+    }
+
+    public List<FeedResponse> getFeed(String userId){
+         List<Post> posts = postRepository.findAll();
+         List<FeedResponse> feedResponses = new ArrayList<>();
+
+            for(Post post : posts){
+                List<String> commentsContent = new ArrayList<>();
+                if(post.getCommentsIds() != null){
+                    for(String commentId : post.getCommentsIds()){
+                        Comments comment = commentRepository.findById(commentId).orElse(null);
+                        if(comment != null){
+                            commentsContent.add(comment.getContent());
+                        }
+                    }
+                }
+    
+                FeedResponse feedResponse = new FeedResponse(
+                    post.getId(),
+                    post.getAuthorId(),
+                    post.getTitle(),
+                    post.getContent(),
+                    post.getMedia(),
+                    post.getLikeCount(),
+                    commentsContent
+                );
+    
+                feedResponses.add(feedResponse);
+            }
+            return feedResponses;
+    }
+
+
+
+}
