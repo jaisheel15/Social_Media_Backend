@@ -52,7 +52,16 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
-  
+
+  auth-service:
+    build: ./auth_service
+    container_name: auth-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/authdb
 
   user-service:
     build: ./user_service
