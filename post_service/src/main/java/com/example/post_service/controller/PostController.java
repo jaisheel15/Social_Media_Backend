@@ -58,8 +58,8 @@ public class PostController {
     }
 
     @GetMapping("/feed")
-    public ResponseEntity<List<FeedResponse>> GetFeed(@RequestBody FeedRequest userId) {
-        return ResponseEntity.ok(postService.getFeed(userId.getUserId()));
+    public ResponseEntity<List<FeedResponse>> GetFeed(@RequestBody FeedRequest user) {
+        return ResponseEntity.ok(postService.getFeed(user.getUserId()));
     }
 
 }

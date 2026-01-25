@@ -7,7 +7,7 @@ import com.example.user_service.service.UserDetailsService;
 
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 
 @AllArgsConstructor
@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class InternalController {
     private final UserDetailsService userDetailsService;
 
-    @GetMapping("/{id}/email")
-    public String GetUserEmail(@PathVariable String id) {
-        return userDetailsService.getUserByEmail(id);
+    @GetMapping("/email")
+    public String GetUserEmail( @RequestHeader("X-User-Id") String userId) {
+        return userDetailsService.getUserByEmail(userId);
     }
     
 }

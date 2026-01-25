@@ -15,9 +15,9 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PutMapping;
 
 
@@ -30,8 +30,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class UserController {
     private final UserDetailsService userDetailsService;
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<UserDetail> GetUser(@PathVariable String userId) {
+    @GetMapping("/")
+    public ResponseEntity<UserDetail> GetUser(@RequestHeader("X-User-Id") String userId) {
         return ResponseEntity.ok(userDetailsService.getUserById(userId));
     }
 
@@ -40,23 +40,23 @@ public class UserController {
         return ResponseEntity.ok(userDetailsService.createUserRequest(entity));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDetail> putMethodName(@PathVariable String id, @RequestBody UserUpdateRequest entity) {
-        return ResponseEntity.ok(userDetailsService.updateUserDetails(id , entity));
+    @PutMapping("/")
+    public ResponseEntity<UserDetail> putMethodName(@RequestHeader("X-User-Id") String userId, @RequestBody UserUpdateRequest entity) {
+        return ResponseEntity.ok(userDetailsService.updateUserDetails(userId , entity));
     }
 
-    @PostMapping("/{userId}/follow/")
-    public ResponseEntity<String> FollowUser(@PathVariable String userId, @RequestBody FollowUserRequest request) {
+    @PostMapping("/follow/")
+    public ResponseEntity<String> FollowUser(@RequestHeader("X-User-Id") String userId, @RequestBody FollowUserRequest request) {
             return ResponseEntity.ok(userDetailsService.followUser(userId , request.getTargetUserId()));
     }
 
-    @GetMapping("/{userId}/followers/")
-    public ResponseEntity<List<UserDetail>> GetFollowerUsers(@PathVariable String userId) {
+    @GetMapping("/followers/")
+    public ResponseEntity<List<UserDetail>> GetFollowerUsers(@RequestHeader("X-User-Id") String userId) {
         return ResponseEntity.ok(userDetailsService.getFollowers(userId));
     }
 
-    @GetMapping("/{userId}/following/")
-    public ResponseEntity<List<UserDetail>> GetFollowingUsers(@PathVariable String userId) {
+    @GetMapping("/following/")
+    public ResponseEntity<List<UserDetail>> GetFollowingUsers(@RequestHeader("X-User-Id") String userId) {
         return ResponseEntity.ok(userDetailsService.getFollowing(userId));
     }
     
