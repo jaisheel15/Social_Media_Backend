@@ -8,4 +8,5 @@ import lombok.Data;
 public class UserFollowEvent {
     private String followerId;
     private String followingId;
+    private String email;
 }

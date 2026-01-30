@@ -15,8 +15,8 @@ public class UserFollowEventProducer {
 
         private static final String TOPIC = "user-follow-events";
 
-    public void publishFollowEvent(String followerId, String followingId) {
-        UserFollowEvent event = new UserFollowEvent(followerId, followingId);
+    public void publishFollowEvent(String followerId, String followingId, String email) {
+        UserFollowEvent event = new UserFollowEvent(followerId, followingId , email);
 
                 kafkaTemplate.send(
                 TOPIC,

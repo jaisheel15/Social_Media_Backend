@@ -84,7 +84,7 @@ public class UserDetailsService {
                 userRepository.save(following);
             });
             
-            userFollowEventProducer.publishFollowEvent(userId, targetUserId);
+            userFollowEventProducer.publishFollowEvent(userId, targetUserId , targetUser.getEmail());
             return "Successfully followed the user";
         }
 

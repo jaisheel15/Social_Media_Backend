@@ -20,18 +20,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
 
-  kafka-ui:
-      image: provectuslabs/kafka-ui:latest
-      container_name: kafka-ui
-      ports:
-        - "3000:8080"
-      depends_on:
-        - kafka
-      environment:
-        KAFKA_CLUSTERS_0_NAME: local-kraft
-        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-        KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
-        
   mongodb:
     image: mongo:latest
     container_name: mongodb

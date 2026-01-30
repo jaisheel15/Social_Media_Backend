@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.post_service.dto.CreateCommentRequest;
 import com.example.post_service.dto.CreatePostRequest;
-import com.example.post_service.dto.FeedRequest;
 import com.example.post_service.dto.FeedResponse;
 import com.example.post_service.dto.UserLikeRequest;
 import com.example.post_service.model.Likes;
@@ -17,6 +16,7 @@ import lombok.AllArgsConstructor;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,12 +54,13 @@ public class PostController {
     @PostMapping("/{id}/comment")
     public ResponseEntity<String> CommentOnPost(@PathVariable String id, @RequestBody CreateCommentRequest entity) {
         postService.commentPost(id, entity);
-        return ResponseEntity.ok("Comment Added");
+        return ResponseEntity.ok("Comment Posted");
     }
 
     @GetMapping("/feed")
-    public ResponseEntity<List<FeedResponse>> GetFeed(@RequestBody FeedRequest user) {
-        return ResponseEntity.ok(postService.getFeed(user.getUserId()));
+    public ResponseEntity<List<FeedResponse>> GetFeed(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
+        return ResponseEntity.ok(postService.getFeed(userId));
     }
 
 }

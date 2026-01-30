@@ -15,5 +15,6 @@ public class UserFollowedEvent {
 
     private String followerId;
     private String followingId;
+    private String email;
     private String eventType; // USER_FOLLOWED
 }

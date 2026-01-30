@@ -14,10 +14,11 @@ import lombok.AllArgsConstructor;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PutMapping;
 
 
@@ -30,8 +31,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class UserController {
     private final UserDetailsService userDetailsService;
 
-    @GetMapping("/")
-    public ResponseEntity<UserDetail> GetUser(@RequestHeader("X-User-Id") String userId) {
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDetail> GetUser(@PathVariable String userId) {
         return ResponseEntity.ok(userDetailsService.getUserById(userId));
     }
 
@@ -41,22 +42,26 @@ public class UserController {
     }
 
     @PutMapping("/")
-    public ResponseEntity<UserDetail> putMethodName(@RequestHeader("X-User-Id") String userId, @RequestBody UserUpdateRequest entity) {
+    public ResponseEntity<UserDetail> putMethodName(Authentication authentication, @RequestBody UserUpdateRequest entity) {
+        String userId = (String) authentication.getPrincipal();
         return ResponseEntity.ok(userDetailsService.updateUserDetails(userId , entity));
     }
 
     @PostMapping("/follow/")
-    public ResponseEntity<String> FollowUser(@RequestHeader("X-User-Id") String userId, @RequestBody FollowUserRequest request) {
+    public ResponseEntity<String> FollowUser(Authentication authentication, @RequestBody FollowUserRequest request) {
+            String userId = (String) authentication.getPrincipal();
             return ResponseEntity.ok(userDetailsService.followUser(userId , request.getTargetUserId()));
     }
 
     @GetMapping("/followers/")
-    public ResponseEntity<List<UserDetail>> GetFollowerUsers(@RequestHeader("X-User-Id") String userId) {
+    public ResponseEntity<List<UserDetail>> GetFollowerUsers(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
         return ResponseEntity.ok(userDetailsService.getFollowers(userId));
     }
 
     @GetMapping("/following/")
-    public ResponseEntity<List<UserDetail>> GetFollowingUsers(@RequestHeader("X-User-Id") String userId) {
+    public ResponseEntity<List<UserDetail>> GetFollowingUsers(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
         return ResponseEntity.ok(userDetailsService.getFollowing(userId));
     }
     
