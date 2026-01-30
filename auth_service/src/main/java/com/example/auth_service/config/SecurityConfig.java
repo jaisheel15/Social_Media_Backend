@@ -16,6 +16,8 @@ import lombok.AllArgsConstructor;
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
+    private final RateLimitFilter rateLimitFilter;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
         http.csrf(csrf-> csrf.disable())
@@ -24,7 +26,8 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**").permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, JwtFilter.class);
     
         return http.build();
     }

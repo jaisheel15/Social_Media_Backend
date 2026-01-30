@@ -15,6 +15,8 @@ public class SecurityConfig {
 
     @Autowired
     private JwtFilter jwtFilter;
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -28,7 +30,8 @@ public class SecurityConfig {
                 .requestMatchers("/posts/**").hasRole("USER")
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, JwtFilter.class);
 
         return http.build();
     }
