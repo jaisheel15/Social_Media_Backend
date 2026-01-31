@@ -2,6 +2,9 @@ package com.example.user_service.service;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.example.user_service.dto.CreateUserRequest;
@@ -23,20 +26,24 @@ public class UserDetailsService {
     private final FollowRepository followRepository;
     private final UserEventProducer userEventProducer;
 
+    @Cacheable(value = "users", key = "#userId")
     public UserDetail getUserById(String userId) {
         return userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    @Cacheable(value = "usersByAuthId", key = "#authUserId")
     public UserDetail getUserByAuthUserId(String authUserId) {
         return userRepository.findByAuthUserId(authUserId)
                 .orElseThrow(() -> new RuntimeException("User profile not found. Please create a profile first."));
     }
 
+    @Cacheable(value = "userEmails", key = "#userId")
     public String getUserByEmail(String userId) {
         UserDetail user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         return user.getEmail();
     }
 
+    @CacheEvict(value = "usersByAuthId", key = "#authUserId")
     public UserDetail createUserRequest(String authUserId, CreateUserRequest request) {
         // Check if user profile already exists for this auth user
         UserDetail existingUser = userRepository.findByAuthUserId(authUserId).orElse(null);
@@ -55,6 +62,10 @@ public class UserDetailsService {
         return savedUser;
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "users", key = "#id"),
+            @CacheEvict(value = "userEmails", key = "#id")
+    })
     public UserDetail updateUserDetails(String id, UserUpdateRequest request) {
         UserDetail userDetail = userRepository.findById(id).orElse(null);
         if (userDetail != null) {
@@ -75,6 +86,12 @@ public class UserDetailsService {
         return null;
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "followers", key = "#targetUserId"),
+            @CacheEvict(value = "following", key = "#authUserId"),
+            @CacheEvict(value = "followersCount", key = "#targetUserId"),
+            @CacheEvict(value = "followingCount", key = "#authUserId")
+    })
     public String followUser(String authUserId, String targetUserId) {
         // Get the follower's user profile using authUserId
         UserDetail follower = userRepository.findByAuthUserId(authUserId)
@@ -109,20 +126,24 @@ public class UserDetailsService {
         return "You are already following this user";
     }
 
+    @Cacheable(value = "followers", key = "#userId")
     public List<UserDetail> getFollowers(String userId) {
         List<Follow> follows = followRepository.findByFollowingId(userId);
         return follows.stream().map(follow -> userRepository.findById(follow.getFollowerId()).orElse(null)).toList();
     }
 
+    @Cacheable(value = "following", key = "#userId")
     public List<UserDetail> getFollowing(String userId) {
         List<Follow> follows = followRepository.findByFollowerId(userId);
         return follows.stream().map(follow -> userRepository.findById(follow.getFollowingId()).orElse(null)).toList();
     }
 
+    @Cacheable(value = "followersCount", key = "#userId")
     public long getFollowersCount(String userId) {
         return followRepository.countByFollowingId(userId);
     }
 
+    @Cacheable(value = "followingCount", key = "#userId")
     public long getFollowingCount(String userId) {
         return followRepository.countByFollowerId(userId);
     }

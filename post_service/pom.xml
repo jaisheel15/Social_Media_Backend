@@ -31,6 +31,11 @@
 	</properties>
 	<dependencies>
 
+	<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+
 <!-- Source: https://mvnrepository.com/artifact/com.github.vladimir-bukhtoyarov/bucket4j-core -->
 <dependency>
     <groupId>com.github.vladimir-bukhtoyarov</groupId>

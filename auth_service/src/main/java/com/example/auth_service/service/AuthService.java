@@ -1,5 +1,6 @@
 package com.example.auth_service.service;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,10 +21,9 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
+    public void register(RegisterRequest request) {
 
-    public void register(RegisterRequest request){
-
-        if(repository.existsByEmail(request.getEmail())){
+        if (repository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already in use");
         }
 
@@ -35,10 +35,12 @@ public class AuthService {
         repository.save(user);
     }
 
-    public String login(LoginRequest request){
-        AuthUser user = repository.findByEmail(request.getEmail()).orElseThrow( () -> new RuntimeException("Invalid email or password"));
+    @Cacheable(value = "authTokens", key = "#request.email")
+    public String login(LoginRequest request) {
+        AuthUser user = repository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-        if(!encoder.matches(request.getPassword(), user.getPassword())){
+        if (!encoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
         }
 
@@ -46,4 +48,4 @@ public class AuthService {
 
     }
 
-}   
+}

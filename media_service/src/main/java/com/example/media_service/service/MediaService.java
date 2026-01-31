@@ -3,6 +3,8 @@ package com.example.media_service.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +25,7 @@ public class MediaService {
     private final MinioProperties props;
     private final MediaRepository mediaRepository;
 
+    @CacheEvict(value = "userMedia", key = "#userId")
     public Media upload(MultipartFile file, String userId) throws Exception {
         String objectName = "media/" + userId + "/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
 
@@ -58,10 +61,12 @@ public class MediaService {
         return mediaRepository.save(media);
     }
 
+    @Cacheable(value = "media", key = "#id")
     public Media getById(UUID id) {
         return mediaRepository.findById(id).orElseThrow(() -> new RuntimeException("Media not found"));
     }
 
+    @Cacheable(value = "userMedia", key = "#userId")
     public List<Media> getByUserId(String userId) {
         return mediaRepository.findByUserId(userId);
     }
