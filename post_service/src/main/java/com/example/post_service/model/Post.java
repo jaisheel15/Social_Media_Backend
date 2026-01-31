@@ -1,5 +1,6 @@
 package com.example.post_service.model;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,5 +36,8 @@ public class Post {
     private List<String> likesIds;
 
     private int likeCount;
+
+    @Builder.Default
+    private Instant createdAt = Instant.now();
 
 }

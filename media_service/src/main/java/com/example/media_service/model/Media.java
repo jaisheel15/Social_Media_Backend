@@ -38,5 +38,5 @@ public class Media {
     private String status;
 
     @Builder.Default
-    private Instant createdAt = Instant.now();
+    private Instant uploadedAt = Instant.now();
 }

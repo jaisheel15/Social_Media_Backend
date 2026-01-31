@@ -1,10 +1,11 @@
 package com.example.media_service.service;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -66,9 +67,10 @@ public class MediaService {
         return mediaRepository.findById(id).orElseThrow(() -> new RuntimeException("Media not found"));
     }
 
-    @Cacheable(value = "userMedia", key = "#userId")
-    public List<Media> getByUserId(String userId) {
-        return mediaRepository.findByUserId(userId);
+    // Note: Caching disabled for Page objects due to Redis deserialization
+    // complexity
+    public Page<Media> getByUserId(String userId, Pageable pageable) {
+        return mediaRepository.findByUserId(userId, pageable);
     }
 
 }

@@ -5,6 +5,9 @@ import java.util.List;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.example.user_service.dto.CreateUserRequest;
@@ -126,16 +129,38 @@ public class UserDetailsService {
         return "You are already following this user";
     }
 
-    @Cacheable(value = "followers", key = "#userId")
-    public List<UserDetail> getFollowers(String userId) {
+    // Note: Caching disabled for Page objects due to Redis deserialization
+    // complexity
+    public Page<UserDetail> getFollowers(String userId, Pageable pageable) {
         List<Follow> follows = followRepository.findByFollowingId(userId);
-        return follows.stream().map(follow -> userRepository.findById(follow.getFollowerId()).orElse(null)).toList();
+        List<UserDetail> allFollowers = follows.stream()
+                .map(follow -> userRepository.findById(follow.getFollowerId()).orElse(null))
+                .filter(user -> user != null)
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), allFollowers.size());
+
+        List<UserDetail> pageContent = start < allFollowers.size() ? allFollowers.subList(start, end) : List.of();
+
+        return new PageImpl<>(pageContent, pageable, allFollowers.size());
     }
 
-    @Cacheable(value = "following", key = "#userId")
-    public List<UserDetail> getFollowing(String userId) {
+    // Note: Caching disabled for Page objects due to Redis deserialization
+    // complexity
+    public Page<UserDetail> getFollowing(String userId, Pageable pageable) {
         List<Follow> follows = followRepository.findByFollowerId(userId);
-        return follows.stream().map(follow -> userRepository.findById(follow.getFollowingId()).orElse(null)).toList();
+        List<UserDetail> allFollowing = follows.stream()
+                .map(follow -> userRepository.findById(follow.getFollowingId()).orElse(null))
+                .filter(user -> user != null)
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), allFollowing.size());
+
+        List<UserDetail> pageContent = start < allFollowing.size() ? allFollowing.subList(start, end) : List.of();
+
+        return new PageImpl<>(pageContent, pageable, allFollowing.size());
     }
 
     @Cacheable(value = "followersCount", key = "#userId")

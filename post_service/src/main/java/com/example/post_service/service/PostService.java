@@ -1,4 +1,4 @@
-package com.example.post_service.service;
+kwpackage com.example.post_service.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.example.post_service.dto.CreateCommentRequest;
@@ -117,12 +119,13 @@ public class PostService {
         postEventProducer.publishPostCommentEvent(postId, post.getAuthorId(), request.getUserId());
     }
 
-    @Cacheable(value = "feed", key = "#userId")
-    public List<FeedResponse> getFeed(String userId) {
-        List<Post> posts = postRepository.findAll();
-        List<FeedResponse> feedResponses = new ArrayList<>();
+    // Note: Caching disabled for Page objects due to Redis deserialization
+    // complexity
+    public Page<FeedResponse> getFeed(String userId, Pageable pageable) {
+        Page<Post> postsPage = postRepository.findAll(pageable);
 
-        for (Post post : posts) {
+        List<FeedResponse> feedResponses = new ArrayList<>();
+        for (Post post : postsPage.getContent()) {
             List<String> commentsContent = new ArrayList<>();
             if (post.getCommentsIds() != null) {
                 for (String commentId : post.getCommentsIds()) {
@@ -144,7 +147,13 @@ public class PostService {
 
             feedResponses.add(feedResponse);
         }
-        return feedResponses;
+        return new org.springframework.data.domain.PageImpl<>(feedResponses, pageable, postsPage.getTotalElements());
+    }
+
+    // Note: Caching disabled for Page objects due to Redis deserialization
+    // complexity
+    public Page<Post> getPostsByAuthor(String authorId, Pageable pageable) {
+        return postRepository.findByAuthorId(authorId, pageable);
     }
 
 }

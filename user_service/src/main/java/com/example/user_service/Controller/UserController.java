@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.user_service.dto.CreateUserRequest;
+import jakarta.validation.Valid;
 import com.example.user_service.dto.FollowUserRequest;
 import com.example.user_service.dto.UserUpdateRequest;
 import com.example.user_service.model.UserDetail;
@@ -11,8 +12,9 @@ import com.example.user_service.service.UserDetailsService;
 
 import lombok.AllArgsConstructor;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,34 +41,40 @@ public class UserController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<UserDetail> CreateUser(Authentication authentication, @RequestBody CreateUserRequest entity) {
+    public ResponseEntity<UserDetail> CreateUser(Authentication authentication,
+            @Valid @RequestBody CreateUserRequest entity) {
         String authUserId = (String) authentication.getPrincipal();
         return ResponseEntity.ok(userDetailsService.createUserRequest(authUserId, entity));
     }
 
     @PutMapping("/")
     public ResponseEntity<UserDetail> UpdateUser(Authentication authentication,
-            @RequestBody UserUpdateRequest entity) {
+            @Valid @RequestBody UserUpdateRequest entity) {
         String userId = (String) authentication.getPrincipal();
         return ResponseEntity.ok(userDetailsService.updateUserDetails(userId, entity));
     }
 
     @PostMapping("/follow")
-    public ResponseEntity<String> FollowUser(Authentication authentication, @RequestBody FollowUserRequest request) {
+    public ResponseEntity<String> FollowUser(Authentication authentication,
+            @Valid @RequestBody FollowUserRequest request) {
         String userId = (String) authentication.getPrincipal();
         return ResponseEntity.ok(userDetailsService.followUser(userId, request.getTargetUserId()));
     }
 
     @GetMapping("/followers")
-    public ResponseEntity<List<UserDetail>> GetFollowerUsers(Authentication authentication) {
+    public ResponseEntity<Page<UserDetail>> GetFollowerUsers(
+            Authentication authentication,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
         String userId = (String) authentication.getPrincipal();
-        return ResponseEntity.ok(userDetailsService.getFollowers(userId));
+        return ResponseEntity.ok(userDetailsService.getFollowers(userId, pageable));
     }
 
     @GetMapping("/following")
-    public ResponseEntity<List<UserDetail>> GetFollowingUsers(Authentication authentication) {
+    public ResponseEntity<Page<UserDetail>> GetFollowingUsers(
+            Authentication authentication,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
         String userId = (String) authentication.getPrincipal();
-        return ResponseEntity.ok(userDetailsService.getFollowing(userId));
+        return ResponseEntity.ok(userDetailsService.getFollowing(userId, pageable));
     }
 
 }
