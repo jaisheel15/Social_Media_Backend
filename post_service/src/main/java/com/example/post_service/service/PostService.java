@@ -1,4 +1,4 @@
-kwpackage com.example.post_service.service;
+package com.example.post_service.service;
 
 import java.util.ArrayList;
 import java.util.List;
