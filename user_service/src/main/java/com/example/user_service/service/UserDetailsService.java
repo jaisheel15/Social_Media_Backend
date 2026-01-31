@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.user_service.dto.CreateUserRequest;
 import com.example.user_service.dto.UserUpdateRequest;
+import com.example.user_service.event.UserEventProducer;
 import com.example.user_service.model.Follow;
 import com.example.user_service.model.UserDetail;
 import com.example.user_service.repository.FollowRepository;
@@ -20,10 +21,15 @@ import lombok.extern.slf4j.Slf4j;
 public class UserDetailsService {
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
-    private final UserFollowEventProducer userFollowEventProducer;
+    private final UserEventProducer userEventProducer;
 
     public UserDetail getUserById(String userId) {
         return userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public UserDetail getUserByAuthUserId(String authUserId) {
+        return userRepository.findByAuthUserId(authUserId)
+                .orElseThrow(() -> new RuntimeException("User profile not found. Please create a profile first."));
     }
 
     public String getUserByEmail(String userId) {
@@ -31,13 +37,22 @@ public class UserDetailsService {
         return user.getEmail();
     }
 
-    public UserDetail createUserRequest(CreateUserRequest request) {
+    public UserDetail createUserRequest(String authUserId, CreateUserRequest request) {
+        // Check if user profile already exists for this auth user
+        UserDetail existingUser = userRepository.findByAuthUserId(authUserId).orElse(null);
+        if (existingUser != null) {
+            throw new RuntimeException("User profile already exists for this account");
+        }
+
         UserDetail userDetail = new UserDetail();
+        userDetail.setAuthUserId(authUserId);
         userDetail.setUsername(request.getUsername());
         userDetail.setEmail(request.getEmail());
         userDetail.setAvatarUrl(request.getAvatarUrl());
         userDetail.setBio(request.getBio());
-        return userRepository.save(userDetail);
+        UserDetail savedUser = userRepository.save(userDetail);
+        userEventProducer.publishUserCreatedEvent(savedUser.getId(), savedUser.getEmail(), savedUser.getCreatedAt());
+        return savedUser;
     }
 
     public UserDetail updateUserDetails(String id, UserUpdateRequest request) {
@@ -52,39 +67,42 @@ public class UserDetailsService {
             if (request.getEmail() != null)
                 userDetail.setEmail(request.getEmail());
 
-            return userRepository.save(userDetail);
+            UserDetail savedUser = userRepository.save(userDetail);
+            userEventProducer.publishUserCreatedEvent(savedUser.getId(), savedUser.getEmail(),
+                    savedUser.getCreatedAt());
+            return savedUser;
         }
         return null;
     }
 
-    public String followUser(String userId, String targetUserId) {
-        userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    public String followUser(String authUserId, String targetUserId) {
+        // Get the follower's user profile using authUserId
+        UserDetail follower = userRepository.findByAuthUserId(authUserId)
+                .orElseThrow(() -> new RuntimeException("User profile not found. Please create a profile first."));
+
+        // Get the target user profile using their MongoDB ID
         UserDetail targetUser = userRepository.findById(targetUserId)
-                .orElse(null);
-        log.info(userId);
-        log.info(targetUserId);
-        if (targetUser == null) {
-            return "Target user not found";
-        }
-        log.info(targetUser.getUsername());
-        if (userId.equals(targetUserId)) {
+                .orElseThrow(() -> new RuntimeException("Target user not found"));
+
+        String followerId = follower.getId();
+
+        log.info("Follower ID: {}", followerId);
+        log.info("Target User ID: {}", targetUserId);
+
+        if (followerId.equals(targetUserId)) {
             throw new RuntimeException("You cannot follow yourself");
         }
 
-        if (!followRepository.existsByFollowerIdAndFollowingId(userId, targetUserId)) {
-            followRepository.save(new Follow(userId, targetUserId));
+        if (!followRepository.existsByFollowerIdAndFollowingId(followerId, targetUserId)) {
+            followRepository.save(new Follow(followerId, targetUserId));
 
-            userRepository.findById(userId).ifPresent(follower -> {
-                follower.setFollowingCount(follower.getFollowingCount() + 1);
-                userRepository.save(follower);
-            });
+            follower.setFollowingCount(follower.getFollowingCount() + 1);
+            userRepository.save(follower);
 
-            userRepository.findById(targetUserId).ifPresent(following -> {
-                following.setFollowersCount(following.getFollowersCount() + 1);
-                userRepository.save(following);
-            });
-            
-            userFollowEventProducer.publishFollowEvent(userId, targetUserId , targetUser.getEmail());
+            targetUser.setFollowersCount(targetUser.getFollowersCount() + 1);
+            userRepository.save(targetUser);
+
+            userEventProducer.publishFollowEvent(followerId, targetUserId, targetUser.getEmail());
             return "Successfully followed the user";
         }
 

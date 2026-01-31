@@ -22,7 +22,7 @@ public class Media {
 
     @Id
     private UUID id;
-    
+
     private String userId;
 
     private String mediaType;
@@ -37,5 +37,6 @@ public class Media {
 
     private String status;
 
+    @Builder.Default
     private Instant createdAt = Instant.now();
 }

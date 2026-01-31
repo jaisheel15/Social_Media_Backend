@@ -23,16 +23,16 @@ public class UserDetail {
 
     private String email;
 
+    private String authUserId; // Links to auth service user ID
+
     private String avatarUrl;
 
     private String bio;
 
-    
     private long followersCount;
 
     private long followingCount;
 
     private Instant createdAt = Instant.now();
-
 
 }

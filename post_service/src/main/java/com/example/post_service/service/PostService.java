@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.example.post_service.dto.CreateCommentRequest;
 import com.example.post_service.dto.CreatePostRequest;
 import com.example.post_service.dto.FeedResponse;
+import com.example.post_service.event.PostEventProducer;
 import com.example.post_service.model.Comments;
 import com.example.post_service.model.Likes;
 import com.example.post_service.model.Post;
@@ -24,6 +25,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final LikesRepository likesRepository;
     private final CommentRepository commentRepository;
+    private final PostEventProducer postEventProducer;
 
     public Post getPostById(String id) {
         return postRepository.findById(id).orElse(null);
@@ -39,7 +41,9 @@ public class PostService {
         .likesIds(new ArrayList<>())
         .build();
 
-        return postRepository.save(post);
+        Post savedPost = postRepository.save(post);
+        postEventProducer.publishPostCreateEvent(savedPost.getAuthorId(), savedPost.getId());
+        return savedPost;
     }
 
     public void deletePost(String id) {
@@ -70,6 +74,7 @@ public Likes likePost(String userId, String postId) {
     post.getLikesIds().add(saved.getId());
     post.setLikeCount(post.getLikeCount() + 1);
     postRepository.save(post);
+    postEventProducer.publishPostLikeEvent(postId, post.getAuthorId(), userId);
     return saved;
 }
 
@@ -91,7 +96,11 @@ public Likes likePost(String userId, String postId) {
         .build());
 
         post.getCommentsIds().add(comment.getId());
+
         postRepository.save(post);
+
+
+        postEventProducer.publishPostCommentEvent(postId, post.getAuthorId(), request.getUserId());
     }
 
     public List<FeedResponse> getFeed(String userId){
